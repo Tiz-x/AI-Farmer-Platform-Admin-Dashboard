@@ -20,12 +20,12 @@ import "./styles/global.css";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Admin Overview",
-  "/farmers":   "All Farmers",
-  "/fields":    "All Fields",
-  "/alerts":    "Alerts",
-  "/users":     "Users",
-  "/content":   "Content Manager",
-  "/settings":  "Settings",
+  "/farmers": "All Farmers",
+  "/fields": "All Fields",
+  "/alerts": "Alerts",
+  "/users": "Users",
+  "/content": "Content Manager",
+  "/settings": "Settings",
 };
 
 function Layout() {
@@ -61,7 +61,7 @@ function Layout() {
           minWidth: 0,
           height: "100vh",
           overflow: "hidden",
-          width: 0, // prevents flex child from overflowing on mobile
+          width: 0,
         }}
       >
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
@@ -71,24 +71,26 @@ function Layout() {
             overflowY: "auto",
             overflowX: "hidden",
             padding: "24px",
-            position: "relative",
+            paddingBottom: "100px",
             boxSizing: "border-box",
             width: "100%",
           }}
         >
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/farmers"   element={<Farmers />}   />
-            <Route path="/fields"    element={<Fields />}    />
-            <Route path="/alerts"    element={<Alerts />}    />
-            <Route path="/content"   element={<Content />}   />
-            <Route path="/users"     element={<Users />}     />
-            <Route path="/settings"  element={<Settings />}  />
-            <Route path="*"          element={<Navigate to="/dashboard" replace />} />
+            <Route path="/farmers" element={<Farmers />} />
+            <Route path="/fields" element={<Fields />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/content" element={<Content />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
-        <BottomNav />
       </div>
+
+      {/* BottomNav outside inner div — fixed to viewport */}
+      <BottomNav />
     </div>
   );
 }
