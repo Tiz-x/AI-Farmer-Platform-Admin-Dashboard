@@ -145,7 +145,7 @@ h5 { font-size: 15px; font-weight: 600; line-height: 1.5; }
   .users-toolbar         { flex-direction: column; align-items: flex-start; }
   .topbar                { padding: 0 16px; }
   .topbar-search         { display: none; }
-  .topbar-season         { display: none; }
+  .topbar-season         { display: none; } 
 }
 
 @media (max-width: 480px) {
