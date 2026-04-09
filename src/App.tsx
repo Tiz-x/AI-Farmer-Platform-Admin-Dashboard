@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -20,19 +20,28 @@ import "./styles/global.css";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Admin Overview",
-  "/farmers": "All Farmers",
-  "/fields": "All Fields",
-  "/alerts": "Alerts",
-  "/users": "Users",
-  "/content": "Content Manager",
-  "/settings": "Settings",
+  "/farmers":   "All Farmers",
+  "/fields":    "All Fields",
+  "/alerts":    "Alerts",
+  "/users":     "Users",
+  "/content":   "Content Manager",
+  "/settings":  "Settings",
 };
 
 function Layout() {
   const location = useLocation();
   const title = pageTitles[location.pathname] ?? "Admin";
   const [sidebarOpen, setSidebarOpen] = useState(false);
-console.log("sidebarOpen:", sidebarOpen);
+
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.classList.add("sidebar-open");
+    } else {
+      document.body.classList.remove("sidebar-open");
+    }
+    return () => document.body.classList.remove("sidebar-open");
+  }, [sidebarOpen]);
 
   return (
     <div
@@ -79,18 +88,18 @@ console.log("sidebarOpen:", sidebarOpen);
         >
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/farmers" element={<Farmers />} />
-            <Route path="/fields" element={<Fields />} />
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/content" element={<Content />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/farmers"   element={<Farmers />}   />
+            <Route path="/fields"    element={<Fields />}    />
+            <Route path="/alerts"    element={<Alerts />}    />
+            <Route path="/content"   element={<Content />}   />
+            <Route path="/users"     element={<Users />}     />
+            <Route path="/settings"  element={<Settings />}  />
+            <Route path="*"          element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>
 
-      {/* BottomNav outside inner div — fixed to viewport */}
+      {/* BottomNav fixed to viewport */}
       <BottomNav />
     </div>
   );

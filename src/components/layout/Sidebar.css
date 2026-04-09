@@ -3,11 +3,13 @@
   width: var(--sidebar-w);
   height: 100vh;
   background: var(--sidebar-bg);
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   border-right: 0.5px solid rgba(168, 216, 50, 0.1);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 /* ── Mobile sidebar ── */
