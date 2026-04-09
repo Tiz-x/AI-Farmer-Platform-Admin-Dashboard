@@ -1,3 +1,4 @@
+/* ── Base sidebar ── */
 .sidebar {
   width: var(--sidebar-w);
   height: 100vh;
@@ -9,13 +10,15 @@
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Mobile sidebar ── */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
+    width: 260px;
     height: 100vh;
-    z-index: 200; /* 👈 higher than backdrop */
+    z-index: 300;
     transform: translateX(-100%);
   }
 
@@ -24,16 +27,14 @@
   }
 }
 
-@media (max-width: 768px) {
-  .sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(1px);
-    z-index: 150; 
-    pointer-events: all;
-  }
+/* ── Backdrop ── */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(1px);
+  z-index: 200; /* below sidebar (300) but above everything else */
+  pointer-events: all;
 }
 
 /* ── Logo row ── */
@@ -181,4 +182,3 @@
   color: var(--sidebar-text);
   margin-top: 1px;
 }
-

@@ -32,6 +32,7 @@ function Layout() {
   const location = useLocation();
   const title = pageTitles[location.pathname] ?? "Admin";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+console.log("sidebarOpen:", sidebarOpen);
 
   return (
     <div
