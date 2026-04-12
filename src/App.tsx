@@ -6,16 +6,18 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import Sidebar from "./components/layout/Sidebar";
-import Topbar from "./components/layout/Topbar";
+import Sidebar   from "./components/layout/Sidebar";
+import Topbar    from "./components/layout/Topbar";
 import BottomNav from "./components/layout/BottomNav";
 import Dashboard from "./pages/Dashboard";
-import Farmers from "./pages/Farmers";
-import Fields from "./pages/Fields";
-import Alerts from "./pages/Alerts";
-import Users from "./pages/Users";
-import Content from "./pages/Content";
-import Settings from "./pages/Settings";
+import Farmers   from "./pages/Farmers";
+import Fields    from "./pages/Fields";
+import Alerts    from "./pages/Alerts";
+import Users     from "./pages/Users";
+import Content   from "./pages/Content";
+import Settings  from "./pages/Settings";
+import Login     from "./pages/Login";
+import { getToken, getUser } from "./services/api";
 import "./styles/global.css";
 
 const pageTitles: Record<string, string> = {
@@ -28,12 +30,23 @@ const pageTitles: Record<string, string> = {
   "/settings":  "Settings",
 };
 
+// ── Auth guard ────────────────────────────────────
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const token = getToken()
+  const user  = getUser()
+
+  if (!token || !user || user.role !== 'admin') {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
+
 function Layout() {
   const location = useLocation();
   const title = pageTitles[location.pathname] ?? "Admin";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Lock body scroll when sidebar is open
   useEffect(() => {
     if (sidebarOpen) {
       document.body.classList.add("sidebar-open");
@@ -46,16 +59,15 @@ function Layout() {
   return (
     <div
       style={{
-        display: "flex",
-        height: "100vh",
-        width: "100vw",
+        display:  "flex",
+        height:   "100vh",
+        width:    "100vw",
         overflow: "hidden",
         position: "relative",
       }}
     >
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Backdrop */}
       {sidebarOpen && (
         <div
           className="sidebar-backdrop"
@@ -65,25 +77,25 @@ function Layout() {
 
       <div
         style={{
-          flex: 1,
-          display: "flex",
+          flex:          1,
+          display:       "flex",
           flexDirection: "column",
-          minWidth: 0,
-          height: "100vh",
-          overflow: "hidden",
-          width: 0,
+          minWidth:      0,
+          height:        "100vh",
+          overflow:      "hidden",
+          width:         0,
         }}
       >
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
         <main
           style={{
-            flex: 1,
-            overflowY: "auto",
-            overflowX: "hidden",
-            padding: "24px",
+            flex:          1,
+            overflowY:     "auto",
+            overflowX:     "hidden",
+            padding:       "24px",
             paddingBottom: "100px",
-            boxSizing: "border-box",
-            width: "100%",
+            boxSizing:     "border-box",
+            width:         "100%",
           }}
         >
           <Routes>
@@ -99,7 +111,6 @@ function Layout() {
         </main>
       </div>
 
-      {/* BottomNav fixed to viewport */}
       <BottomNav />
     </div>
   );
@@ -108,7 +119,20 @@ function Layout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout />
+      <Routes>
+        {/* Public route */}
+        <Route path="/login" element={<Login />} />
+
+        {/* All dashboard routes protected */}
+        <Route
+          path="/*"
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }
