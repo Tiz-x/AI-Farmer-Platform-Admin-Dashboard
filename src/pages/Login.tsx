@@ -6,12 +6,12 @@ import { authAPI } from '../services/api'
 import './Login.css'
 
 export default function Login() {
-  const navigate                    = useNavigate()
-  const [email, setEmail]           = useState('')
-  const [password, setPassword]     = useState('')
-  const [showPass, setShowPass]     = useState(false)
-  const [error, setError]           = useState('')
-  const [loading, setLoading]       = useState(false)
+  const navigate                = useNavigate()
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [error, setError]       = useState('')
+  const [loading, setLoading]   = useState(false)
 
   async function handleLogin() {
     setError('')
@@ -35,10 +35,6 @@ export default function Login() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleLogin()
-  }
-
   return (
     <div className="login-page">
       <div className="login-card">
@@ -46,7 +42,7 @@ export default function Login() {
         {/* Logo */}
         <div className="login-logo">
           <div className="login-logo-icon">
-            <PiLeafFill size={20} color="black" />
+            <PiLeafFill size={20} color="white" />
           </div>
           <span className="login-logo-text">
             AgroFlow<span>+</span>
@@ -60,69 +56,72 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <div className="login-form">
+        <form
+          onSubmit={e => { e.preventDefault(); handleLogin() }}
+          noValidate
+        >
+          <div className="login-form">
 
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div className="login-input-wrap">
-              <MdEmail size={16} className="login-input-icon" />
-              <input
-                className="login-input"
-                type="email"
-                placeholder="admin@agroflow.io"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoComplete="email"
-              />
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <div className="login-input-wrap">
+                <MdEmail size={16} className="login-input-icon" />
+                <input
+                  className="login-input"
+                  type="email"
+                  placeholder="admin@agroflow.io"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="form-group">
-            <div className="login-label-row">
-              <label className="form-label">Password</label>
-              <span className="login-forgot">Forgot password?</span>
+            <div className="form-group">
+              <div className="login-label-row">
+                <label className="form-label">Password</label>
+                <span className="login-forgot">Forgot password?</span>
+              </div>
+              <div className="login-input-wrap">
+                <MdLock size={16} className="login-input-icon" />
+                <input
+                  className="login-input"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  className="login-input-toggle"
+                  onClick={() => setShowPass(p => !p)}
+                  type="button"
+                >
+                  {showPass
+                    ? <MdVisibilityOff size={17} />
+                    : <MdVisibility size={17} />}
+                </button>
+              </div>
             </div>
-            <div className="login-input-wrap">
-              <MdLock size={16} className="login-input-icon" />
-              <input
-                className="login-input"
-                type={showPass ? 'text' : 'password'}
-                placeholder="Enter your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoComplete="current-password"
-              />
-              <button
-                className="login-input-toggle"
-                onClick={() => setShowPass(p => !p)}
-                type="button"
-              >
-                {showPass
-                  ? <MdVisibilityOff size={17} />
-                  : <MdVisibility size={17} />}
-              </button>
-            </div>
-          </div>
 
-          {error && (
-            <div className="login-error">{error}</div>
-          )}
-
-          <button
-            className="login-btn"
-            onClick={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="login-spinner" />
-            ) : (
-              <>Sign In <span className="login-btn-arrow">→</span></>
+            {error && (
+              <div className="login-error">{error}</div>
             )}
-          </button>
 
-        </div>
+            <button
+              type="submit"
+              className="login-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="login-spinner" />
+              ) : (
+                <>Sign In <span className="login-btn-arrow">→</span></>
+              )}
+            </button>
+
+          </div>
+        </form>
 
         <p className="login-terms">
           By signing in you agree to our{' '}
