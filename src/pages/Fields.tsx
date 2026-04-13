@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   MdLandscape, MdLocationOn, MdWaterDrop,
   MdOpenInNew, MdAccessTime,
@@ -9,22 +9,44 @@ import SearchBar from '../components/shared/SearchBar'
 import FilterBar from '../components/shared/FilterBar'
 import StatusBadge from '../components/ui/StatusBadge'
 import Drawer from '../components/shared/Drawer'
-import { fields, crops, locations } from '../data/mockData'
+import { fieldsAPI, crops, locations } from '../services/api'
 import './Fields.css'
 
-type Field = typeof fields[0]
+type Field = {
+  id:             string
+  farmerId:       string
+  farmerName:     string
+  location:       string
+  crop:           string
+  area:           number
+  ndvi:           number
+  soilMoisture:   number
+  lastIrrigation: string | null
+  status:         string
+  activeAlerts:   number
+}
 
 export default function Fields() {
-  const [search, setSearch]               = useState('')
+  const [fieldList, setFieldList]           = useState<Field[]>([])
+  const [loading, setLoading]               = useState(true)
+  const [apiError, setApiError]             = useState('')
+  const [search, setSearch]                 = useState('')
   const [locationFilter, setLocationFilter] = useState('')
-  const [cropFilter, setCropFilter]       = useState('')
-  const [statusFilter, setStatusFilter]   = useState('')
-  const [selected, setSelected]           = useState<Field | null>(null)
-  const [sortKey, setSortKey]             = useState<keyof Field>('id')
-  const [sortDir, setSortDir]             = useState<'asc' | 'desc'>('asc')
+  const [cropFilter, setCropFilter]         = useState('')
+  const [statusFilter, setStatusFilter]     = useState('')
+  const [selected, setSelected]             = useState<Field | null>(null)
+  const [sortKey, setSortKey]               = useState<keyof Field>('id')
+  const [sortDir, setSortDir]               = useState<'asc' | 'desc'>('asc')
 
-  const locationOptions = locations.map(l => ({ label: l, value: l }))
-  const cropOptions     = crops.map(c => ({ label: c, value: c }))
+  useEffect(() => {
+    fieldsAPI.getAll()
+      .then(data => setFieldList(data.fields || []))
+      .catch(err => setApiError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const locationOptions = locations.map((l: string) => ({ label: l, value: l }))
+  const cropOptions     = crops.map((c: string) => ({ label: c, value: c }))
   const statusOptions   = [
     { label: 'Active',  value: 'active'  },
     { label: 'Warning', value: 'warning' },
@@ -32,27 +54,27 @@ export default function Fields() {
   ]
 
   const filtered = useMemo(() => {
-    return fields
+    return fieldList
       .filter(f => {
         const q = search.toLowerCase()
         return (
-          (f.id.toLowerCase().includes(q) ||
-           f.farmerName.toLowerCase().includes(q) ||
-           f.location.toLowerCase().includes(q) ||
-           f.crop.toLowerCase().includes(q)) &&
+          (f.id.toLowerCase().includes(q)           ||
+           f.farmerName.toLowerCase().includes(q)   ||
+           f.location.toLowerCase().includes(q)     ||
+           f.crop.toLowerCase().includes(q))        &&
           (locationFilter ? f.location === locationFilter : true) &&
           (cropFilter     ? f.crop     === cropFilter     : true) &&
           (statusFilter   ? f.status   === statusFilter   : true)
         )
       })
       .sort((a, b) => {
-        const av = a[sortKey]
-        const bv = b[sortKey]
+        const av = a[sortKey] ?? ''
+        const bv = b[sortKey] ?? ''
         if (av < bv) return sortDir === 'asc' ? -1 : 1
         if (av > bv) return sortDir === 'asc' ?  1 : -1
         return 0
       })
-  }, [search, locationFilter, cropFilter, statusFilter, sortKey, sortDir])
+  }, [search, locationFilter, cropFilter, statusFilter, sortKey, sortDir, fieldList])
 
   function handleSort(key: keyof Field) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -70,10 +92,21 @@ export default function Fields() {
     return 'low'
   }
 
+  if (loading) return (
+    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
+      Loading fields...
+    </div>
+  )
+
+  if (apiError) return (
+    <div style={{ padding: '40px', color: '#C0392B', fontSize: 15 }}>
+      Error: {apiError}
+    </div>
+  )
+
   return (
     <div className="fields-page">
 
-      {/* Page Header */}
       <div className="page-header">
         <div>
           <h2 className="page-title">All Fields</h2>
@@ -81,7 +114,6 @@ export default function Fields() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="fields-toolbar">
         <SearchBar
           value={search}
@@ -97,35 +129,18 @@ export default function Fields() {
         />
       </div>
 
-      {/* Table */}
       <div className="fields-table-wrap">
         <table className="fields-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort('id')}>
-                Field ID <SortIcon col="id" />
-              </th>
-              <th onClick={() => handleSort('farmerName')}>
-                Farmer <SortIcon col="farmerName" />
-              </th>
-              <th onClick={() => handleSort('location')}>
-                Location <SortIcon col="location" />
-              </th>
-              <th onClick={() => handleSort('crop')}>
-                Crop <SortIcon col="crop" />
-              </th>
-              <th onClick={() => handleSort('area')}>
-                Area (ha) <SortIcon col="area" />
-              </th>
-              <th onClick={() => handleSort('ndvi')}>
-                NDVI <SortIcon col="ndvi" />
-              </th>
-              <th onClick={() => handleSort('soilMoisture')}>
-                Soil Moisture <SortIcon col="soilMoisture" />
-              </th>
-              <th onClick={() => handleSort('lastIrrigation')}>
-                Last Irrigation <SortIcon col="lastIrrigation" />
-              </th>
+              <th onClick={() => handleSort('id')}>Field ID <SortIcon col="id" /></th>
+              <th onClick={() => handleSort('farmerName')}>Farmer <SortIcon col="farmerName" /></th>
+              <th onClick={() => handleSort('location')}>Location <SortIcon col="location" /></th>
+              <th onClick={() => handleSort('crop')}>Crop <SortIcon col="crop" /></th>
+              <th onClick={() => handleSort('area')}>Area (ha) <SortIcon col="area" /></th>
+              <th onClick={() => handleSort('ndvi')}>NDVI <SortIcon col="ndvi" /></th>
+              <th onClick={() => handleSort('soilMoisture')}>Soil Moisture <SortIcon col="soilMoisture" /></th>
+              <th>Last Irrigation</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -135,19 +150,13 @@ export default function Fields() {
               <tr>
                 <td colSpan={10} className="fields-empty">
                   <MdLandscape size={36} />
-                  <p>No fields match your search</p>
+                  <p>No fields found</p>
                 </td>
               </tr>
             ) : (
               filtered.map(f => (
-                <tr
-                  key={f.id}
-                  className="fields-row"
-                  onClick={() => setSelected(f)}
-                >
-                  <td>
-                    <span className="field-id-tag">{f.id}</span>
-                  </td>
+                <tr key={f.id} className="fields-row" onClick={() => setSelected(f)}>
+                  <td><span className="field-id-tag">{f.id.slice(0, 8)}</span></td>
                   <td>
                     <div className="farmer-name-cell">
                       <div className="farmer-avatar">
@@ -189,7 +198,9 @@ export default function Fields() {
                   <td>
                     <div className="cell-with-icon">
                       <MdAccessTime size={14} className="cell-icon" />
-                      {f.lastIrrigation}
+                      {f.lastIrrigation
+                        ? new Date(f.lastIrrigation).toLocaleDateString('en-GB')
+                        : '—'}
                     </div>
                   </td>
                   <td><StatusBadge status={f.status as any} /></td>
@@ -209,7 +220,6 @@ export default function Fields() {
         </table>
       </div>
 
-      {/* Field Detail Drawer */}
       <Drawer
         open={!!selected}
         onClose={() => setSelected(null)}
@@ -217,20 +227,17 @@ export default function Fields() {
       >
         {selected && (
           <div className="field-detail">
-
-            {/* Header */}
             <div className="field-detail-header">
               <div className="field-detail-icon">
                 <MdLandscape size={26} />
               </div>
               <div>
-                <h3 className="field-detail-id">{selected.id}</h3>
+                <h3 className="field-detail-id">{selected.id.slice(0, 8)}</h3>
                 <p className="field-detail-farmer">Owned by {selected.farmerName}</p>
                 <StatusBadge status={selected.status as any} />
               </div>
             </div>
 
-            {/* Stats Row */}
             <div className="field-detail-stats">
               <div className="fd-stat">
                 <TbPlant2 size={18} className="fd-stat-icon" />
@@ -249,38 +256,32 @@ export default function Fields() {
               </div>
             </div>
 
-            {/* Info List */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Field Information</p>
               <div className="fd-info-list">
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <MdLocationOn size={15} /> Location
-                  </span>
+                  <span className="fd-info-label"><MdLocationOn size={15} /> Location</span>
                   <span className="fd-info-val">{selected.location}</span>
                 </div>
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <TbPlant2 size={15} /> Crop
-                  </span>
+                  <span className="fd-info-label"><TbPlant2 size={15} /> Crop</span>
                   <span className="fd-info-val">{selected.crop}</span>
                 </div>
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <GiWateringCan size={15} /> Last Irrigation
+                  <span className="fd-info-label"><GiWateringCan size={15} /> Last Irrigation</span>
+                  <span className="fd-info-val">
+                    {selected.lastIrrigation
+                      ? new Date(selected.lastIrrigation).toLocaleDateString('en-GB')
+                      : '—'}
                   </span>
-                  <span className="fd-info-val">{selected.lastIrrigation}</span>
                 </div>
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <MdAccessTime size={15} /> Farmer ID
-                  </span>
-                  <span className="fd-info-val">{selected.farmerId}</span>
+                  <span className="fd-info-label"><MdAccessTime size={15} /> Active Alerts</span>
+                  <span className="fd-info-val">{selected.activeAlerts}</span>
                 </div>
               </div>
             </div>
 
-            {/* NDVI Bar */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Crop Health (NDVI)</p>
               <div className="fd-ndvi-bar-wrap">
@@ -301,7 +302,6 @@ export default function Fields() {
               </p>
             </div>
 
-            {/* Soil Moisture Bar */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Soil Moisture</p>
               <div className="fd-ndvi-bar-wrap">
@@ -322,16 +322,13 @@ export default function Fields() {
               </p>
             </div>
 
-            {/* Actions */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Actions</p>
               <div className="fd-actions">
                 <button className="fd-btn primary">Schedule Irrigation</button>
-                <button className="fd-btn secondary">View Farmer Profile</button>
-                <button className="fd-btn danger">Flag Field</button>
+                <button className="fd-btn secondary" onClick={() => setSelected(null)}>Close</button>
               </div>
             </div>
-
           </div>
         )}
       </Drawer>

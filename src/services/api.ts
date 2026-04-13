@@ -141,3 +141,31 @@ export const alertsAPI = {
   unresolve: (id: string) =>
     apiFetch(`/alerts/${id}/unresolve`, { method: 'PATCH' }),
 }
+
+
+// ── Constants ─────────────────────────────────────
+export const crops     = ['Maize', 'Cassava', 'Tomato', 'Pepper']
+export const locations = [
+  'Oba-Ile', 'Ijapo Estate', 'Oke-Aro', 'Arakale', 'Isolo',
+  'Oda', 'Oke-Ogba', 'Ijomu', 'Ayedun', 'Alagbaka',
+]
+
+// ── Content ───────────────────────────────────────
+export const contentAPI = {
+  getAll: () => apiFetch('/content'),
+
+  seed: () => apiFetch('/content/seed', { method: 'POST' }),
+
+  upload: (formData: FormData) => {
+    const token = getToken()
+    return fetch(`${BASE_URL}/content/upload`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body:    formData,
+    }).then(async res => {
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      return data
+    })
+  },
+}

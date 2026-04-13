@@ -1,54 +1,79 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   MdPeople, MdPhone, MdLocationOn,
-  MdGrass, MdBarChart, MdOpenInNew, MdLandscape
+  MdGrass, MdBarChart, MdOpenInNew,
+  MdLandscape,
 } from 'react-icons/md'
 import { TbPlant2 } from 'react-icons/tb'
 import SearchBar from '../components/shared/SearchBar'
 import FilterBar from '../components/shared/FilterBar'
 import StatusBadge from '../components/ui/StatusBadge'
 import Drawer from '../components/shared/Drawer'
-import { farmers } from '../data/mockData'
+import { farmersAPI, crops, locations } from '../services/api'
 import './Farmers.css'
 
-type Farmer = typeof farmers[0]
+type Farmer = {
+  id:       string
+  userId:   string
+  name:     string
+  email:    string
+  phone:    string | null
+  location: string
+  status:   string
+  fields:   number
+  area:     number
+  ndvi:     number
+  crop?:    string
+}
 
 export default function Farmers() {
-  const [search, setSearch]           = useState('')
-  const [stateFilter, setStateFilter] = useState('')
-  const [cropFilter, setCropFilter]   = useState('')
+  const [farmerList, setFarmerList]     = useState<Farmer[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [apiError, setApiError]         = useState('')
+  const [search, setSearch]             = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
+  const [cropFilter, setCropFilter]     = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [selected, setSelected]       = useState<Farmer | null>(null)
-  const [sortKey, setSortKey]         = useState<keyof Farmer>('name')
-  const [sortDir, setSortDir]         = useState<'asc' | 'desc'>('asc')
+  const [selected, setSelected]         = useState<Farmer | null>(null)
+  const [sortKey, setSortKey]           = useState<keyof Farmer>('name')
+  const [sortDir, setSortDir]           = useState<'asc' | 'desc'>('asc')
 
-  const stateOptions  = [...new Set(farmers.map(f => f.location))].map(s => ({ label: s, value: s }))
-  const cropOptions   = [...new Set(farmers.map(f => f.crop))].map(c => ({ label: c, value: c }))
-  const statusOptions = [
-    { label: 'Active',  value: 'active'  },
-    { label: 'Warning', value: 'warning' },
-    { label: 'Alert',   value: 'danger'  },
+  useEffect(() => {
+    farmersAPI.getAll()
+      .then(data => setFarmerList(data.farmers || []))
+      .catch(err => setApiError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const locationOptions = locations.map((l: string) => ({ label: l, value: l }))
+  const cropOptions     = crops.map((c: string) => ({ label: c, value: c }))
+  const statusOptions   = [
+    { label: 'Active',    value: 'active'    },
+    { label: 'Warning',   value: 'warning'   },
+    { label: 'Suspended', value: 'suspended' },
   ]
 
   const filtered = useMemo(() => {
-    return farmers
+    return farmerList
       .filter(f => {
         const q = search.toLowerCase()
         return (
-          (f.name.toLowerCase().includes(q) || f.location.toLowerCase().includes(q) || f.crop.toLowerCase().includes(q)) &&
-          (stateFilter  ? f.location  === stateFilter  : true) &&
-          (cropFilter   ? f.crop   === cropFilter   : true) &&
-          (statusFilter ? f.status === statusFilter : true)
+          (f.name.toLowerCase().includes(q) ||
+           f.location.toLowerCase().includes(q) ||
+           (f.crop || '').toLowerCase().includes(q)) &&
+          (locationFilter ? f.location === locationFilter : true) &&
+          (cropFilter     ? f.crop     === cropFilter     : true) &&
+          (statusFilter   ? f.status   === statusFilter   : true)
         )
       })
       .sort((a, b) => {
-        const av = a[sortKey]
-        const bv = b[sortKey]
+        const av = a[sortKey] ?? ''
+        const bv = b[sortKey] ?? ''
         if (av < bv) return sortDir === 'asc' ? -1 : 1
         if (av > bv) return sortDir === 'asc' ?  1 : -1
         return 0
       })
-  }, [search, stateFilter, cropFilter, statusFilter, sortKey, sortDir])
+  }, [search, locationFilter, cropFilter, statusFilter, sortKey, sortDir, farmerList])
 
   function handleSort(key: keyof Farmer) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -60,10 +85,34 @@ export default function Farmers() {
     return <span className="sort-icon active">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
+  async function handleSuspend(farmer: Farmer) {
+    const newStatus = farmer.status === 'active' ? 'suspended' : 'active'
+    try {
+      await farmersAPI.updateStatus(farmer.id, newStatus as 'active' | 'suspended')
+      setFarmerList(prev => prev.map(f =>
+        f.id === farmer.id ? { ...f, status: newStatus } : f
+      ))
+      setSelected(prev => prev?.id === farmer.id ? { ...prev, status: newStatus } : prev)
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  if (loading) return (
+    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
+      Loading farmers...
+    </div>
+  )
+
+  if (apiError) return (
+    <div style={{ padding: '40px', color: '#C0392B', fontSize: 15 }}>
+      Error: {apiError}
+    </div>
+  )
+
   return (
     <div className="farmers-page">
 
-      {/* Page Header */}
       <div className="page-header">
         <div>
           <h2 className="page-title">All Farmers</h2>
@@ -71,23 +120,21 @@ export default function Farmers() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="farmers-toolbar">
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search farmers, state, crop..."
+          placeholder="Search farmers, location, crop..."
         />
         <FilterBar
           filters={[
-            { key: 'state',  label: 'State',  options: stateOptions,  value: stateFilter,  onChange: setStateFilter  },
-            { key: 'crop',   label: 'Crop',   options: cropOptions,   value: cropFilter,   onChange: setCropFilter   },
-            { key: 'status', label: 'Status', options: statusOptions, value: statusFilter, onChange: setStatusFilter },
+            { key: 'location', label: 'Location', options: locationOptions, value: locationFilter, onChange: setLocationFilter },
+            { key: 'crop',     label: 'Crop',     options: cropOptions,     value: cropFilter,     onChange: setCropFilter     },
+            { key: 'status',   label: 'Status',   options: statusOptions,   value: statusFilter,   onChange: setStatusFilter   },
           ]}
         />
       </div>
 
-      {/* Table */}
       <div className="farmers-table-wrap">
         <table className="farmers-table">
           <thead>
@@ -96,7 +143,7 @@ export default function Farmers() {
                 Farmer <SortIcon col="name" />
               </th>
               <th onClick={() => handleSort('location')}>
-                State <SortIcon col="location" />
+                Location <SortIcon col="location" />
               </th>
               <th onClick={() => handleSort('crop')}>
                 Crop <SortIcon col="crop" />
@@ -119,16 +166,12 @@ export default function Farmers() {
               <tr>
                 <td colSpan={8} className="farmers-empty">
                   <MdPeople size={36} />
-                  <p>No farmers match your search</p>
+                  <p>No farmers found</p>
                 </td>
               </tr>
             ) : (
               filtered.map(f => (
-                <tr
-                  key={f.id}
-                  className="farmers-row"
-                  onClick={() => setSelected(f)}
-                >
+                <tr key={f.id} className="farmers-row" onClick={() => setSelected(f)}>
                   <td>
                     <div className="farmer-name-cell">
                       <div className="farmer-avatar">
@@ -136,28 +179,28 @@ export default function Farmers() {
                       </div>
                       <div>
                         <p className="farmer-name">{f.name}</p>
-                        <p className="farmer-id">ID: {f.id}</p>
+                        <p className="farmer-id">{f.email}</p>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div className="cell-with-icon">
                       <MdLocationOn size={14} className="cell-icon" />
-                      {f.location}
+                      {f.location || '—'}
                     </div>
                   </td>
                   <td>
                     <div className="cell-with-icon">
                       <TbPlant2 size={14} className="cell-icon" />
-                      {f.crop}
+                      {f.crop || '—'}
                     </div>
                   </td>
                   <td>
-                    <div className={`ndvi-pill ${f.ndvi >= 0.6 ? 'good' : f.ndvi >= 0.5 ? 'mid' : 'low'}`}>
-                      {f.ndvi.toFixed(2)}
+                    <div className={`ndvi-pill ${f.ndvi >= 0.6 ? 'good' : f.ndvi >= 0.5 ? 'mid' : f.ndvi > 0 ? 'low' : ''}`}>
+                      {f.ndvi > 0 ? f.ndvi.toFixed(2) : '—'}
                     </div>
                   </td>
-                  <td className="cell-num">{f.area.toLocaleString()}</td>
+                  <td className="cell-num">{f.area > 0 ? f.area.toLocaleString() : '—'}</td>
                   <td className="cell-num">{f.fields}</td>
                   <td><StatusBadge status={f.status as any} /></td>
                   <td>
@@ -176,7 +219,6 @@ export default function Farmers() {
         </table>
       </div>
 
-      {/* Farmer Detail Drawer */}
       <Drawer
         open={!!selected}
         onClose={() => setSelected(null)}
@@ -184,20 +226,17 @@ export default function Farmers() {
       >
         {selected && (
           <div className="farmer-detail">
-
-            {/* Profile */}
             <div className="farmer-detail-profile">
               <div className="farmer-detail-avatar">
                 {selected.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </div>
               <div>
                 <h3 className="farmer-detail-name">{selected.name}</h3>
-                <p className="farmer-detail-id">Farmer ID: {selected.id}</p>
+                <p className="farmer-detail-id">{selected.email}</p>
                 <StatusBadge status={selected.status as any} />
               </div>
             </div>
 
-            {/* Stats Row */}
             <div className="farmer-detail-stats">
               <div className="fd-stat">
                 <MdLandscape size={18} className="fd-stat-icon" />
@@ -206,72 +245,70 @@ export default function Farmers() {
               </div>
               <div className="fd-stat">
                 <MdBarChart size={18} className="fd-stat-icon" />
-                <p className="fd-stat-val">{selected.area} ha</p>
+                <p className="fd-stat-val">{selected.area > 0 ? selected.area + ' ha' : '—'}</p>
                 <p className="fd-stat-label">Total Area</p>
               </div>
               <div className="fd-stat">
                 <MdGrass size={18} className="fd-stat-icon" />
-                <p className="fd-stat-val">{selected.ndvi.toFixed(2)}</p>
+                <p className="fd-stat-val">{selected.ndvi > 0 ? selected.ndvi.toFixed(2) : '—'}</p>
                 <p className="fd-stat-label">NDVI</p>
               </div>
             </div>
 
-            {/* Info List */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Farm Information</p>
               <div className="fd-info-list">
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <MdLocationOn size={15} /> State
-                  </span>
-                  <span className="fd-info-val">{selected.location}</span>
+                  <span className="fd-info-label"><MdLocationOn size={15} /> Location</span>
+                  <span className="fd-info-val">{selected.location || '—'}</span>
                 </div>
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <TbPlant2 size={15} /> Primary Crop
-                  </span>
-                  <span className="fd-info-val">{selected.crop}</span>
+                  <span className="fd-info-label"><TbPlant2 size={15} /> Primary Crop</span>
+                  <span className="fd-info-val">{selected.crop || '—'}</span>
                 </div>
                 <div className="fd-info-row">
-                  <span className="fd-info-label">
-                    <MdPhone size={15} /> Phone
-                  </span>
-                  <span className="fd-info-val">{selected.phone}</span>
+                  <span className="fd-info-label"><MdPhone size={15} /> Phone</span>
+                  <span className="fd-info-val">{selected.phone || '—'}</span>
                 </div>
               </div>
             </div>
 
-            {/* NDVI Health Bar */}
-            <div className="farmer-detail-section">
-              <p className="fd-section-title">Crop Health (NDVI)</p>
-              <div className="fd-ndvi-bar-wrap">
-                <div className="fd-ndvi-bar-bg">
-                  <div
-                    className="fd-ndvi-bar-fill"
-                    style={{ width: `${selected.ndvi * 100}%` }}
-                  />
+            {selected.ndvi > 0 && (
+              <div className="farmer-detail-section">
+                <p className="fd-section-title">Crop Health (NDVI)</p>
+                <div className="fd-ndvi-bar-wrap">
+                  <div className="fd-ndvi-bar-bg">
+                    <div
+                      className="fd-ndvi-bar-fill"
+                      style={{ width: `${selected.ndvi * 100}%` }}
+                    />
+                  </div>
+                  <span className="fd-ndvi-val">{(selected.ndvi * 100).toFixed(0)}%</span>
                 </div>
-                <span className="fd-ndvi-val">{(selected.ndvi * 100).toFixed(0)}%</span>
+                <p className="fd-ndvi-note">
+                  {selected.ndvi >= 0.65
+                    ? 'Crop health is excellent'
+                    : selected.ndvi >= 0.5
+                    ? 'Crop health is moderate — monitor closely'
+                    : 'Crop health is low — action required'}
+                </p>
               </div>
-              <p className="fd-ndvi-note">
-                {selected.ndvi >= 0.65
-                  ? 'Crop health is excellent'
-                  : selected.ndvi >= 0.5
-                  ? 'Crop health is moderate — monitor closely'
-                  : 'Crop health is low — action required'}
-              </p>
-            </div>
+            )}
 
-            {/* Actions */}
             <div className="farmer-detail-section">
               <p className="fd-section-title">Actions</p>
               <div className="fd-actions">
-                <button className="fd-btn primary">Send Alert</button>
-                <button className="fd-btn secondary">View Fields</button>
-                <button className="fd-btn danger">Suspend Account</button>
+                <button
+                  className={`fd-btn ${selected.status === 'active' ? 'danger' : 'primary'}`}
+                  onClick={() => handleSuspend(selected)}
+                >
+                  {selected.status === 'active' ? 'Suspend Account' : 'Reinstate Account'}
+                </button>
+                <button className="fd-btn secondary" onClick={() => setSelected(null)}>
+                  Close
+                </button>
               </div>
             </div>
-
           </div>
         )}
       </Drawer>
