@@ -46,7 +46,7 @@ export default function Login() {
         {/* Logo */}
         <div className="login-logo">
           <div className="login-logo-icon">
-            <PiLeafFill size={20} color="white" />
+            <PiLeafFill size={20} color="black" />
           </div>
           <span className="login-logo-text">
             AgroFlow<span>+</span>
