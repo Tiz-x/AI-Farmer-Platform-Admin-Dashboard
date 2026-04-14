@@ -9,6 +9,7 @@ import SearchBar from '../components/shared/SearchBar'
 import FilterBar from '../components/shared/FilterBar'
 import StatusBadge from '../components/ui/StatusBadge'
 import Drawer from '../components/shared/Drawer'
+import PageLoader from '../components/PageLoader/PageLoader'
 import { farmersAPI, crops, locations } from '../services/api'
 import './Farmers.css'
 
@@ -98,11 +99,7 @@ export default function Farmers() {
     }
   }
 
-  if (loading) return (
-    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
-      Loading farmers...
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   if (apiError) return (
     <div style={{ padding: '40px', color: '#C0392B', fontSize: 15 }}>

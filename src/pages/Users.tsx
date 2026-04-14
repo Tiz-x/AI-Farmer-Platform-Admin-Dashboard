@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import PageLoader from '../components/PageLoader/PageLoader'
 import {
   MdPersonAdd, MdPeople, MdAdminPanelSettings,
   MdShoppingCart, MdStorefront, MdOpenInNew,
@@ -145,11 +146,7 @@ export default function Users() {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   }
 
-  if (loading) return (
-    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
-      Loading users...
-    </div>
-  )
+ if (loading) return <PageLoader />
 
   return (
     <div className="users-page">

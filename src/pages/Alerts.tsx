@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import PageLoader from '../components/PageLoader/PageLoader'
 import {
   MdWarning, MdCheckCircle, MdError,
   MdInfo, MdLocationOn, MdOpenInNew,
@@ -114,11 +115,7 @@ export default function Alerts() {
 
   function closeModal() { setSelected(null) }
 
-  if (loading) return (
-    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
-      Loading alerts...
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   return (
     <div className="alerts-page">

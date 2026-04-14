@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import PageLoader from '../components/PageLoader/PageLoader'
 import {
   MdPeople, MdLandscape, MdBarChart, MdWarning,
 } from 'react-icons/md'
@@ -51,13 +52,7 @@ export default function Dashboard() {
     color: crop === 'Maize' ? '#A8D832' : crop === 'Cassava' ? '#2D6A35' : crop === 'Tomato' ? '#E05A2B' : '#E9A323',
   }))
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
-        <p style={{ color: 'var(--clr-text-muted)' }}>Loading dashboard...</p>
-      </div>
-    )
-  }
+  if (loading) return <PageLoader />
 
   return (
     <div className="dashboard">

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { MdUpload, MdCheckCircle, MdEdit } from 'react-icons/md'
+import PageLoader from '../components/PageLoader/PageLoader'
 import './Content.css'
 
 const BASE_URL = 'http://localhost:5000/api'
@@ -133,13 +134,7 @@ export default function Content() {
 
   const pendingCount = images.filter(img => !img.saved).length
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
-        <p style={{ color: 'var(--clr-text-muted)' }}>Loading content images...</p>
-      </div>
-    )
-  }
+if (loading) return <PageLoader />
 
   return (
     <div className="content-page">

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import PageLoader from '../components/PageLoader/PageLoader'
 import {
   MdLandscape, MdLocationOn, MdWaterDrop,
   MdOpenInNew, MdAccessTime,
@@ -92,11 +93,7 @@ export default function Fields() {
     return 'low'
   }
 
-  if (loading) return (
-    <div style={{ padding: '40px', color: 'var(--clr-text-muted)', fontSize: 15 }}>
-      Loading fields...
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   if (apiError) return (
     <div style={{ padding: '40px', color: '#C0392B', fontSize: 15 }}>
