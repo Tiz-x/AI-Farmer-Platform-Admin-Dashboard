@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageLoader from './components/PageLoader/PageLoader'
 import {
   BrowserRouter,
   Routes,
@@ -66,6 +67,8 @@ function Layout() {
         position: "relative",
       }}
     >
+
+      <PageLoader />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && (
