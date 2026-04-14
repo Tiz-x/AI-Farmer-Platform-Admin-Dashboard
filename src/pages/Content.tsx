@@ -3,8 +3,7 @@ import { MdUpload, MdCheckCircle, MdEdit } from 'react-icons/md'
 import PageLoader from '../components/PageLoader/PageLoader'
 import './Content.css'
 
-const BASE_URL = 'http://localhost:5000/api'
-
+const BASE_URL = 'https://ai-farmer-platform-backend-code.onrender.com/api'
 function getToken() {
   return localStorage.getItem('agroflow_token')
 }
